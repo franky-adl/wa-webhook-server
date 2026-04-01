@@ -72,10 +72,7 @@ app.post("/webhook", async (req, res) => {
                             parameters: {
                                 flow_id: FLOW_ID,
                                 flow_message_version: "3",
-                                // replace flow_token with a unique identifier for this flow message to track it in your endpoint & webhook
-                                flow_token: "enquiry_flow_token_12345",
                                 flow_cta: "Send an Enquiry",
-                                flow_action: "data_exchange",
                                 // uncomment to send a draft flow before publishing
                                 mode: "draft",
                             },
