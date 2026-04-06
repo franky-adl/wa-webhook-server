@@ -1,6 +1,13 @@
 // Import Express.js
 const express = require("express");
 const axios = require("axios");
+const {
+    sendFlowMessage,
+    sendFlowResponseMessage,
+    markMessageAsRead,
+    sendEnquiryMessage,
+    sendEnquiryResponseMessage,
+} = require("./messaging");
 
 // Create an Express app
 const app = express();
@@ -42,43 +49,43 @@ app.post("/webhook", async (req, res) => {
         if (
             message.type === "text" &&
             // for demo purposes, send the flow message whenever a user sends a message containing "appointment"
-            message.text.body.toLowerCase().includes("查詢")
+            ((message.text.body.toLowerCase().includes("查詢") &&
+                !message.text.body.toLowerCase().includes("心儀行程名稱")) ||
+                (message.text.body.toLowerCase().includes("enquiry") &&
+                    !message.text.body
+                        .toLowerCase()
+                        .includes("desired tour name")))
         ) {
-            // send flow message as per the docs here https://developers.facebook.com/docs/whatsapp/flows/gettingstarted/sendingaflow#interactive-message-parameters
-            await axios({
-                method: "POST",
-                url: `https://graph.facebook.com/v23.0/${business_phone_number_id}/messages`,
-                headers: {
-                    Authorization: `Bearer ${GRAPH_API_TOKEN}`,
-                },
-                data: {
-                    messaging_product: "whatsapp",
-                    to: message.from,
-                    type: "interactive",
-                    interactive: {
-                        type: "flow",
-                        header: {
-                            type: "text",
-                            text: "Hello there 👋",
-                        },
-                        body: {
-                            text: "Thank you for contacting Walk in Hong Kong. Please click the button below to fill out the enquiry form.",
-                        },
-                        footer: {
-                            text: "Click the button below to proceed",
-                        },
-                        action: {
-                            name: "flow",
-                            parameters: {
-                                flow_id: FLOW_ID,
-                                flow_message_version: "3",
-                                flow_cta: "Send an Enquiry",
-                                // uncomment to send a draft flow before publishing
-                                mode: "draft",
-                            },
-                        },
-                    },
-                },
+            // // send flow message as per the docs here https://developers.facebook.com/docs/whatsapp/flows/gettingstarted/sendingaflow#interactive-message-parameters
+            // sendFlowMessage({
+            //     business_phone_number_id,
+            //     recipient_phone_number: message.from,
+            //     flow_id: FLOW_ID,
+            //     graph_api_token: GRAPH_API_TOKEN,
+            // });
+            // Since flow message is difficult to test, we'll send the enquiry template for now
+            sendEnquiryMessage({
+                business_phone_number_id,
+                recipient_phone_number: message.from,
+                graph_api_token: GRAPH_API_TOKEN,
+                language: "zh",
+            });
+        }
+        // Reply confirmation message after receiving enquiry message
+        if (
+            message.type === "text" &&
+            (message.text.body.toLowerCase().includes("心儀行程名稱") ||
+                message.text.body.toLowerCase().includes("desired tour name"))
+        ) {
+            sendEnquiryResponseMessage({
+                business_phone_number_id,
+                recipient_phone_number: message.from,
+                graph_api_token: GRAPH_API_TOKEN,
+                language: message.text.body
+                    .toLowerCase()
+                    .includes("心儀行程名稱")
+                    ? "zh"
+                    : "en",
             });
         }
 
@@ -88,33 +95,18 @@ app.post("/webhook", async (req, res) => {
             message.interactive?.type === "nfm_reply"
         ) {
             // send confirmation message
-            await axios({
-                method: "POST",
-                url: `https://graph.facebook.com/v23.0/${business_phone_number_id}/messages`,
-                headers: {
-                    Authorization: `Bearer ${GRAPH_API_TOKEN}`,
-                },
-                data: {
-                    messaging_product: "whatsapp",
-                    to: message.from,
-                    type: "text",
-                    text: { body: "You've successfully submitted an enquiry" },
-                },
+            sendFlowResponseMessage({
+                business_phone_number_id,
+                recipient_phone_number: message.from,
+                graph_api_token: GRAPH_API_TOKEN,
             });
         }
 
         // mark incoming message as read
-        await axios({
-            method: "POST",
-            url: `https://graph.facebook.com/v23.0/${business_phone_number_id}/messages`,
-            headers: {
-                Authorization: `Bearer ${GRAPH_API_TOKEN}`,
-            },
-            data: {
-                messaging_product: "whatsapp",
-                status: "read",
-                message_id: message.id,
-            },
+        markMessageAsRead({
+            business_phone_number_id,
+            message_id: message.id,
+            graph_api_token: GRAPH_API_TOKEN,
         });
     }
 
