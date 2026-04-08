@@ -56,20 +56,20 @@ app.post("/webhook", async (req, res) => {
                         .toLowerCase()
                         .includes("desired tour name")))
         ) {
-            // // send flow message as per the docs here https://developers.facebook.com/docs/whatsapp/flows/gettingstarted/sendingaflow#interactive-message-parameters
-            // sendFlowMessage({
-            //     business_phone_number_id,
-            //     recipient_phone_number: message.from,
-            //     flow_id: FLOW_ID,
-            //     graph_api_token: GRAPH_API_TOKEN,
-            // });
-            // Since flow message is difficult to test, we'll send the enquiry template for now
-            sendEnquiryMessage({
+            // send flow message as per the docs here https://developers.facebook.com/docs/whatsapp/flows/gettingstarted/sendingaflow#interactive-message-parameters
+            sendFlowMessage({
                 business_phone_number_id,
                 recipient_phone_number: message.from,
+                flow_id: FLOW_ID,
                 graph_api_token: GRAPH_API_TOKEN,
-                language: "zh",
             });
+            // // Since flow message is difficult to test, we'll send the enquiry template for now
+            // sendEnquiryMessage({
+            //     business_phone_number_id,
+            //     recipient_phone_number: message.from,
+            //     graph_api_token: GRAPH_API_TOKEN,
+            //     language: "zh",
+            // });
         }
         // Reply confirmation message after receiving enquiry message
         if (
